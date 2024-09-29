@@ -2,21 +2,9 @@ if settings.startup["ao-complexity-level"].value ~= "simple" then
   if mods["space-exploration"] and settings.startup["se-addon"].value == true then
     icon = se_addon_graphics .. "thorium-module-2.png"
     icon_size = 128
-    effect = {
-          productivity = { bonus = 0.06 },
-          consumption = { bonus = 1.20 },
-          speed = { bonus = 0.15 },
-          pollution = { bonus = 0.12 }
-        }
   else
     icon = graphics .. "thorium-module-2.png"
     icon_size = 64
-    effect = {
-          productivity = { bonus = 0.05 },
-          consumption = { bonus = 0.50 },
-          speed = { bonus = 0.20 },
-          pollution = { bonus = 0.10 }
-        }
   end
   data:extend(
     {
@@ -31,7 +19,13 @@ if settings.startup["ao-complexity-level"].value ~= "simple" then
         tier = 2,
         order = "d[thorium-module-1]-d[thorium-module-2]",
         stack_size = 50,
-        effect = effect,
+        effect =
+        {
+          productivity = { bonus = 0.05 },
+          consumption = { bonus = 0.50 },
+          speed = { bonus = 0.20 },
+          pollution = { bonus = 0.10 }
+        },
         limitation = thorium_module_limitation(),
         limitation_message_key = "thorium-module-usable-only-on-intermediates"
       },
