@@ -224,6 +224,43 @@ function loadDefaultOf(type, name)
 end
 
 ---
+--- Checks if an item or fluid exists in the game data.
+---@param itemType (string) The type of the item/fluid (e.g., "item", "fluid").
+---@param itemName (string) The name of the item/fluid to check.
+---@return boolean True if the item/fluid exists, false otherwise.
+function itemExists(itemType, itemName)
+    if data.raw[itemType] and data.raw[itemType][itemName] then
+        return true
+    end
+    return false
+end
+
+---
+--- Validates if all items/fluids in a results or ingredients table exist.
+--- Filters out non-existent items and logs warnings.
+---@param items (table) The table of items/fluids to validate.
+---@param recipeName (string) The name of the recipe (for logging purposes).
+---@param context (string) Context string for logging ("results" or "ingredients").
+---@return table The filtered table containing only existing items/fluids.
+function validateItems(items, recipeName, context)
+    local validItems = {}
+    for _, item in ipairs(items) do
+        local itemType = item.type or "item"
+        local itemName = item.name or item[1]
+        
+        if itemName and itemExists(itemType, itemName) then
+            table.insert(validItems, item)
+        else
+            if ao_debug == true then
+                log("WARNING: Skipping non-existent " .. itemType .. " '" .. tostring(itemName) .. 
+                    "' in " .. context .. " of recipe." .. recipeName .. "\n")
+            end
+        end
+    end
+    return validItems
+end
+
+---
 --- Hides an object of the specified type with the given name(s).
 --- @param Type (string) The type of object to hide (e.g. "item", "recipe", "fluid").
 --- @param name (string|table) The name(s) of the object to hide. Can be a single string or a table of strings.
@@ -314,22 +351,42 @@ function modifyIngredients(name, ingredients, task)
     end
     if task == "globalReplace" or data.raw["recipe"][name] then
         if task == "replace" or task == nil then
-            data.raw["recipe"][name].ingredients = ingredients
-            if ao_debug == true then
-                log("Replaced ingredients of recipe." .. name .. " with " .. serpent.block(ingredients) .. "\n")
+            -- Validate ingredients before replacing (only if it's a table)
+            if type(ingredients) == "table" then
+                local validatedIngredients = validateItems(ingredients, name, "ingredients")
+                data.raw["recipe"][name].ingredients = validatedIngredients
+                if ao_debug == true then
+                    log("Replaced ingredients of recipe." .. name .. " with " .. serpent.block(validatedIngredients) .. "\n")
+                end
+            else
+                data.raw["recipe"][name].ingredients = ingredients
+                if ao_debug == true then
+                    log("Replaced ingredients of recipe." .. name .. " with " .. serpent.block(ingredients) .. "\n")
+                end
             end
         elseif task == "add" then
             if type(ingredients) == "table" then
-                for _, i in ipairs(ingredients) do
+                local validatedIngredients = validateItems(ingredients, name, "ingredients")
+                for _, i in ipairs(validatedIngredients) do
                     table.insert(data.raw["recipe"][name].ingredients, i)
                 end
                 if ao_debug == true then
-                    log("Added '" .. serpent.block(ingredients) .. "' as ingredients to recipe." .. name .. "\n")
+                    log("Added '" .. serpent.block(validatedIngredients) .. "' as ingredients to recipe." .. name .. "\n")
                 end
             else
-                table.insert(data.raw["recipe"][name].ingredients, ingredients)
-                if ao_debug == true then
-                    log("Added '" .. serpent.block(ingredients) .. "' as ingredient to recipe." .. name .. "\n")
+                -- Single ingredient - validate it
+                local itemType = ingredients.type or "item"
+                local itemName = ingredients.name or ingredients[1]
+                if itemName and itemExists(itemType, itemName) then
+                    table.insert(data.raw["recipe"][name].ingredients, ingredients)
+                    if ao_debug == true then
+                        log("Added '" .. serpent.block(ingredients) .. "' as ingredient to recipe." .. name .. "\n")
+                    end
+                else
+                    if ao_debug == true then
+                        log("WARNING: Skipping non-existent " .. itemType .. " '" .. tostring(itemName) .. 
+                            "' in ingredients of recipe." .. name .. "\n")
+                    end
                 end
             end
         elseif task == "globalReplace" then
@@ -369,22 +426,42 @@ function modifyResults(name, results, task)
     if data.raw["recipe"][name] then
         if data.raw["recipe"][name].results then
             if task == "replace" or task == nil then
-                data.raw["recipe"][name].results = results
-                if ao_debug == true then
-                    log("Replaced results of recipe." .. name .. " with " .. serpent.block(results) .. "\n")
+                -- Validate results before replacing (only if it's a table)
+                if type(results) == "table" then
+                    local validatedResults = validateItems(results, name, "results")
+                    data.raw["recipe"][name].results = validatedResults
+                    if ao_debug == true then
+                        log("Replaced results of recipe." .. name .. " with " .. serpent.block(validatedResults) .. "\n")
+                    end
+                else
+                    data.raw["recipe"][name].results = results
+                    if ao_debug == true then
+                        log("Replaced results of recipe." .. name .. " with " .. serpent.block(results) .. "\n")
+                    end
                 end
             elseif task == "add" then
                 if type(results) == "table" then
-                    for _, i in ipairs(results) do
+                    local validatedResults = validateItems(results, name, "results")
+                    for _, i in ipairs(validatedResults) do
                         table.insert(data.raw["recipe"][name].results, i)
                     end
                     if ao_debug == true then
-                        log("Added '" .. serpent.block(results) .. "' as results to recipe." .. name .. "\n")
+                        log("Added '" .. serpent.block(validatedResults) .. "' as results to recipe." .. name .. "\n")
                     end
                 else
-                    table.insert(data.raw["recipe"][name].results, results)
-                    if ao_debug == true then
-                        log("Added '" .. serpent.block(results) .. "' as result to recipe." .. name .. "\n" .. "\n")
+                    -- Single result - validate it
+                    local itemType = results.type or "item"
+                    local itemName = results.name or results[1]
+                    if itemName and itemExists(itemType, itemName) then
+                        table.insert(data.raw["recipe"][name].results, results)
+                        if ao_debug == true then
+                            log("Added '" .. serpent.block(results) .. "' as result to recipe." .. name .. "\n" .. "\n")
+                        end
+                    else
+                        if ao_debug == true then
+                            log("WARNING: Skipping non-existent " .. itemType .. " '" .. tostring(itemName) .. 
+                                "' in results of recipe." .. name .. "\n")
+                        end
                     end
                 end
             elseif task == "globalReplace" then
@@ -427,11 +504,13 @@ function modifyResults(name, results, task)
             elseif task == "globalReplace" then
                 for _, recipe in pairs(data.raw["recipe"]) do
                     if recipe.results then
-                        if recipe.results.name == name then
-                            recipe.results.name = results
-                            if ao_debug == true then
-                                log("Replaced result '" .. name .. "' in recipe '" .. recipe.name .. "' with '" ..
-                                    serpent.block(results) .. "'" .. "\n")
+                        for k, result in pairs(recipe.results) do
+                            if result.name == name then
+                                recipe.results[k].name = results
+                                if ao_debug == true then
+                                    log("Replaced result '" .. name .. "' in recipe '" .. recipe.name .. "' with '" ..
+                                        serpent.block(results) .. "'" .. "\n")
+                                end
                             end
                         end
                     end

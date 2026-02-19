@@ -41,8 +41,9 @@ script.on_nth_tick(60, function(event)
             if burner.remaining_burning_fuel > 0 then
                 -- check if the fluid_boxes with water are full
                 local fluid_boxes = pair.reactor.fluidbox
-                if fluid_boxes[1].amount > 10 then -- Xenon Supply
-                    if fluid_boxes[2].amount < 200 then -- Water Drainage
+                -- Check if fluid boxes exist and contain fluids before accessing .amount
+                if fluid_boxes[1] and fluid_boxes[1].amount and fluid_boxes[1].amount > 10 then -- Xenon Supply
+                    if fluid_boxes[2] and fluid_boxes[2].amount and fluid_boxes[2].amount < 200 then -- Water Drainage
                         energy_interface.energy = energy_interface.energy +
                             5 * 1000 * 1000 * 1000
                     end

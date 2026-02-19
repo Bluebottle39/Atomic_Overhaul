@@ -26,7 +26,7 @@ data:extend(
         subgroup = "advanced-reprocessing",
         ingredients =
         {
-            {type = "item", name = "advanced-plutonium-fuel-cell", amount = 5}
+            {type = "item", name = "advanced-plutonium-depleted-cell", amount = 5}
         },
         results = data.raw["recipe"]["plutonium-without-research-data"].results,
     }

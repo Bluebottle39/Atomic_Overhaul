@@ -33,7 +33,7 @@ else
         amount = 5
     }, {
         type = "item",
-        name = "tritium",
+        name = "kr-tritium",
         probability = 0.20,
         amount = 1
     }, {
@@ -93,7 +93,7 @@ else
         amount = 3
     }, {
         type = "item",
-        name = "tritium",
+        name = "kr-tritium",
         probability = 0.15,
         amount = 1
     }, {
